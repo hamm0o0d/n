@@ -1,6 +1,7 @@
 
 import numpy as np
 from Models.perceptron import Perceptron
+from Models.adaline import Adaline
 from HelperFunctions.train_test_split import train_test_split
 from HelperFunctions.load_dataset import load_dataset
 
@@ -24,6 +25,9 @@ def runTest(chosenModel, chosen_features, class1, class2, learningRate, epochsNu
     if chosenModel == "Perceptron":
         perceptron_model = Perceptron(2, learningRate, epochsNum, addBias)
         perceptron_model.train(xtrain,ytrain)
+        print("Perceptron Accuracy:",perceptron_model.evaluate(xtest, ytest))
 
-        print(perceptron_model.evaluate(xtest,ytest))
-    else: print("no")
+    else :
+        adaline_model = Adaline(mseThreshold ,2, learningRate, epochsNum )
+        adaline_model.train(xtrain,ytrain)
+        print("Adaline Accuracy:",adaline_model.evaluate(xtest, ytest))
