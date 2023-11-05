@@ -1,4 +1,5 @@
 import numpy as np
+from HelperFunctions.metrics import confusion_matrix
 
 class Perceptron:
     def __init__(self, num_features, learning_rate=0.01, num_epochs=100, use_bias=True):
@@ -57,11 +58,14 @@ class Perceptron:
         - accuracy (float): Accuracy of the Perceptron on the test data.
         """
         correct = 0
+        y_hat = []
         for features, label in zip(test_data, labels):
             prediction = self.predict(features)
+            y_hat.append(prediction)
             if prediction == label:
                 correct += 1
         accuracy = correct / len(test_data)
+        confusion_matrix(labels, y_hat, "class 1", "class 2")
         return accuracy
 
 

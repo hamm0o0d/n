@@ -1,5 +1,6 @@
 import numpy as np
 import random
+from HelperFunctions.metrics import confusion_matrix
 class Adaline:
     def __init__(self, mseThreshold,num_features, learning_rate=0.01, num_epochs=100, hasBias = True):
         self.mseThreshold = mseThreshold
@@ -50,13 +51,15 @@ class Adaline:
     def evaluate(self, test_data, labels):
         if self.hasBias:
             test_data = self.__addBiasToX(test_data)
-        
+        y_hat=[]
         correct = 0
         for features, label in zip(test_data, labels):
             prediction = self.predict(features)
+            y_hat.append(prediction)
             if prediction == label:
                 correct += 1
         accuracy = correct / len(test_data)
+        confusion_matrix(labels , y_hat , "class 1" , "class 2")
         return accuracy
 
 
