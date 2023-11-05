@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from HelperFunctions.metrics import confusion_matrix
+from HelperFunctions.metrics import unique_elements
 class Adaline:
     def __init__(self, mseThreshold,num_features, learning_rate=0.01, num_epochs=100, hasBias = True):
         self.mseThreshold = mseThreshold
@@ -59,7 +60,8 @@ class Adaline:
             if prediction == label:
                 correct += 1
         accuracy = correct / len(test_data)
-        confusion_matrix(labels , y_hat , "class 1" , "class 2")
+        unique_element = unique_elements(labels, y_hat)
+        confusion_matrix(labels , y_hat, unique_element )
         return accuracy
 
 
