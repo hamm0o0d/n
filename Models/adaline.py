@@ -34,7 +34,7 @@ class Adaline:
             for features, label in zip(training_data, labels):
                 prediction = np.dot(features, self.weights)
                 error = label - prediction
-                meanSquareError += error**2
+                meanSquareError += 0.5 * (error**2)
 
             meanSquareError = meanSquareError / len(training_data)
             # print(meanSquareError)

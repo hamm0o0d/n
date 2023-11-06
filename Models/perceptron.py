@@ -11,12 +11,12 @@ class Perceptron:
         - num_features (int): Number of input features.
         - learning_rate (float): Learning rate or step size for weight updates.
         - num_epochs (int): Number of training epochs.
-        - use_bias (bool): Flag to indicate whether to use the bias term.
+        - hasBias (bool): Flag to indicate whether to use the bias term.
         """
         self.num_features = num_features
         self.learning_rate = learning_rate
         self.num_epochs = num_epochs
-        self.use_bias = use_bias
+        self.hasBias = use_bias
         self.weights = np.zeros(num_features + int(use_bias))  # Additional weight for the bias term
 
     def predict(self, features):
@@ -29,7 +29,7 @@ class Perceptron:
         Returns:
         - prediction (int): Predicted label (0 or 1).
         """
-        activation = np.dot(features, self.weights[int(self.use_bias):]) + self.weights[0] * self.use_bias
+        activation = np.dot(features, self.weights[int(self.hasBias):]) + self.weights[0] * self.hasBias
         return 1 if activation >= 0 else 0
 
     def train(self, training_data, labels):
@@ -44,8 +44,8 @@ class Perceptron:
             for features, label in zip(training_data, labels):
                 prediction = self.predict(features)
                 update = self.learning_rate * (label - prediction)
-                self.weights[int(self.use_bias):] += update * features
-                self.weights[0] += update * self.use_bias
+                self.weights[int(self.hasBias):] += update * features
+                self.weights[0] += update * self.hasBias
 
     def evaluate(self, test_data, labels):
         """
