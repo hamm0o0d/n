@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 
 def train_test_split(x, y, test_size=0.3, random_state=7):
+
+    x = np.array(x)
+    y = np.array(y)
+    
     num_samples = len(y)
     num_test_samples = int(test_size * len(y))
 
