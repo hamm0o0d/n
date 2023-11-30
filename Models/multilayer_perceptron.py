@@ -1,132 +1,264 @@
+import math
 import numpy as np
 
 
 
 
-class MultiLayerPerceptron:
-    def __init__(self, num_features, num_layers, num_neurons, num_classes, num_epochs, learn_rate, has_bias, activation):
-        self.num_features = num_features
-        self.num_layers = num_layers
-        self.num_neurons = num_neurons
-        self.num_classes = num_classes
-        self.num_epochs = num_epochs
-        self.learn_rate = learn_rate
-        self.has_bias = has_bias
-        self.activation = self._sigmoid if activation == 'sigmoid' else self._tanh
-        self.derivative = self._sigmoid_dash if activation == 'sigmoid' else self._tanh_dash
 
-        self.weights = []
+class MulilayerPerceptron() :
+     
+    def __init__( self, hasBias, learning_rate, epochs, layers, activation ) :
+        self.hasBias = hasBias
+        self.learning_rate = learning_rate
+        self.epochs = epochs
 
-        # Add weights for the input layer
-        input_size = self.num_features + int(self.has_bias)
-        self.weights.append(np.random.rand(self.num_neurons,input_size))
+        if(activation == 'sigmoid'):
+            self.f_dash = self._sigmoid_dash
+        elif(activation == 'tanh'):
+            self.f_dash = self._tanh_dash
+        else:
+            raise('please enter a valid activation: [sigmoid, tanh]')
 
-        # Add weights for each hidden layer
-        for _ in range(num_layers - 1):
-            self.weights.append(np.random.rand(self.num_neurons,self.num_neurons + int(self.has_bias)))
+        # the number of weights is equal to the num of neurons in the previous layer
+        self.neurons = []
+        for i in range(1, len(layers)):
+            weightsNum = layers[i-1]
+            layerNeuronsNum = layers[i]
+            thisLayerNeurons = [None] * layerNeuronsNum
+            for j in range(layerNeuronsNum):
+                neuron = self._Neuron(self, weightsNum, activation)
+                thisLayerNeurons[j] = neuron
+            self.neurons.append(thisLayerNeurons)
 
-        # Add weights for output layer
-        self.weights.append(np.random.rand(self.num_classes,self.num_neurons + int(self.has_bias)))
-        # print(int(self.has_bias))
-        # for i in self.weights:
-        #     print(i.shape)
+        print('architecture layers', len(self.neurons))
+        for layer in self.neurons:
+            print('layer with neuronsNum:', len(layer), 'numOfInputWeights', len(layer[0].weights))
 
-    
+            
 
-    def forward_propagation(self, input_layer):
-        current_layer = input_layer
-        layers = []
-        # print( self.weights[0].shape,current_layer.shape)
-        for i in range(len(self.weights)):
-            a = np.dot(self.weights[i],current_layer)
-            # print(a.shape)
-            l = self.activation(a)
-            layers.append(l)
-            current_layer = l
 
-        return layers
+    def train(self, input_data, output_data):
+        X = np.array(input_data)
+        y = np.array(output_data)
 
-    def backward_propagation(self, target_output, predicted_outputs):
-        gradients = []
-        for layer in self.weights:
-            gradients.append(np.zeros(self.num_neurons))
-
+        assert len(X) == len(y)
+        assert self._isCorrectInputLayer(X)
+        classes_num = np.unique(y).size
+        assert self._isCorrectOutputLayer(classes_num)
 
         
-        output_errors = np.array(target_output) - np.array(predicted_outputs[-1])
-        gradients[-1] = (output_errors * self.derivative(predicted_outputs[-1]))
-        # print('target_output', target_output)
-        # print('output_errors', output_errors)
-        # print('predicted_outputs', predicted_outputs[-1])
+        self.classes_num = classes_num
 
+        y_multiClass = self._transform_Y_to_multiclass(y)
         
 
 
-        for i in range(len(self.weights) -2, -1, -1):
-            # if i ==0 :break
+        sampleSize = X.shape[0]
 
-            next_layer_weights = self.weights[i + 1]
-            next_layer_errors = gradients[i + 1]
-            current_layer_errors = np.dot(next_layer_weights.T, next_layer_errors )
-            current_layer_deltas = current_layer_errors * self.derivative(predicted_outputs[i])
-            gradients[i] = current_layer_deltas
+        error = 0
 
-        
-        return gradients
+        for epoch_num in range(self.epochs):
 
-    def update_weights(self, gradients):
-        for i in range(len(self.weights)):
-            current_weights = self.weights[i]
-            current_errors = gradients[i]
+            error = 0
 
-            print('current_weights', current_weights.shape)
-            print('current_errors', current_errors.shape)
+            for i in range(sampleSize):
+                layersOutputs = self._forward(X[i])
+                # print(layersOutputs)
+                error += self._backward(layersOutputs, y_multiClass, i)
 
-            # current_errors = current_errors.reshape(-1, 1)
-            # print(self.weights[i].shape,current_errors.shape)
-            current_weights += self.learn_rate * current_weights * np.array(current_errors)
+                # break # to just make 1 sample of x
 
-    def train(self, input_data, target_data):
-        for epoch in range(self.num_epochs):
-            for i in range(len(input_data)):
-                input_layer = input_data[i]
-                target_output = target_data[i]
-
-                predicted_output = self.forward_propagation(input_layer)
-                # for i in predicted_output: print(i.shape)
-
-                gradients = self.backward_propagation(target_output, predicted_output)
-
-                self.update_weights(gradients)
-
+            print('epoch', epoch_num, ' accur:', (sampleSize - error), '/', sampleSize)
+            if error == 0:
+                print('early stopping, error is 0')
                 break
 
-
-    def _sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
         
-    def _tanh(self, z):
-        expZ = np.exp(z)
-        _expZ = np.exp(-z)
-        return (expZ - _expZ) / (expZ + _expZ)
-        
-    def _sigmoid_dash(self, X):
-        return X * (1 - X)
+        print('Training finished with accuracy:', (sampleSize - error) / sampleSize, '\n')
+        # self.printWeights()
 
-    def _tanh_dash(self, X):
-        return 1 - (X ** 2)
+
+    def _forward(self, xi):
+        previousLayerOutput = xi
+        layersOutput = [
+            xi
+        ]
+        for layer in self.neurons:
+            neuronsNum = len(layer)
+            layersOutput.append(np.zeros(neuronsNum))
+            
+        
+        for layerIndex in range(len(self.neurons)):
+            layer = self.neurons[layerIndex]
+            
+            for neuronIndex in range(len(layer)):
+            #    print('epoch', epoch_num, 'i', i, 'layer', layerIndex, 'neuronIndex', neuronIndex)
+                previousLayerOutput = layersOutput[layerIndex] # no -1, bec it is 0-based
+                layersOutput[layerIndex + 1][neuronIndex] = layer[neuronIndex].forward(previousLayerOutput)
+        return layersOutput
+                
+
+
+    def _backward(self, layersOutputs, y_multiClass, sampleIndex):
+
+        layersGradients = []
+        
+        for layer in self.neurons:
+            neuronsNum = len(layer)
+            layersGradients.append([0] * neuronsNum)
+
+
+        last_layer_index = len(self.neurons) - 1
+        last_layer = self.neurons[last_layer_index]
+
+        # Last Layer
+        for neuronIndex in range(len(last_layer)):
+            Y_k_plus1 = layersOutputs[last_layer_index + 1][neuronIndex]
+            terminal_gradient = y_multiClass[neuronIndex][sampleIndex] - Y_k_plus1
+            error = terminal_gradient
+
+            f_dash = self.f_dash(Y_k_plus1)
+            gradient = f_dash * terminal_gradient
+            layersGradients[last_layer_index][neuronIndex] = gradient
+            neuron = last_layer[neuronIndex]
+            neuron.backward(gradient, layersOutputs[last_layer_index])
+
+        # Processing for other layers
+        for layerIndex in range(last_layer_index - 1, -1, -1):
+            layer = self.neurons[layerIndex]
+
+            for neuronIndex in range(len(layer)):
+                terminal_gradient = 0
+                nextLayer = self.neurons[layerIndex + 1]
+
+                for nextLayerNeuronIndex in range(len(nextLayer)):
+                    weightIndex = neuronIndex + 1 if self.hasBias else neuronIndex
+                    weight = nextLayer[nextLayerNeuronIndex].weights[weightIndex]
+                    terminal_neuron_gradient = layersGradients[layerIndex + 1][nextLayerNeuronIndex]
+                    terminal_gradient += terminal_neuron_gradient * weight
+
+                f_dash = self.f_dash(layersOutputs[layerIndex + 1][neuronIndex])
+                gradient = f_dash * terminal_gradient
+                layersGradients[layerIndex][neuronIndex] = gradient
+                neuron = layer[neuronIndex]
+                neuron.backward(gradient, layersOutputs[layerIndex])
+                
+
+        last_layer_pred = last_layer_pred = layersOutputs[-1]
+        final_class = self._classifyOutput(last_layer_pred)
+        error = 1 if y_multiClass[final_class][sampleIndex] != 1 else 0
+        return error
+
+
+    def printWeights(self):
+        for i in range(len(self.neurons)):
+            layer = self.neurons[i]
+            for j in range(len(layer)):
+                neuron = layer[j]
+                print('neuron', i, j, 'weights', neuron.weights)
+
+
+    def _sigmoid_dash(self, Y_k_plus1):
+        return Y_k_plus1 * (1 - Y_k_plus1)
+
+    def _tanh_dash(self, Y_k_plus1):
+        return 1 - (Y_k_plus1 ** 2)
+
+
+
+    def _transform_Y_to_multiclass(self, y):
+        y_multiClass =  []
+        for positiveClassIndex in range(self.classes_num):
+            y_class = np.array(y)
+            for i in range(len(y)):
+                y_class[i] = 1 if y_class[i] == positiveClassIndex else 0
+            y_multiClass.append(y_class)
+        return y_multiClass
+
+
+    def _classifyOutput(self, last_layer_pred):
+        maxPred = -999
+        maxIndex = None
+        for i in range(len(last_layer_pred)):
+            pred = last_layer_pred[i]
+            if pred > maxPred:
+                maxPred = pred
+                maxIndex = i
+        
+        return maxIndex
     
 
     def predict(self, X):
         X = np.array(X)
         sampleSize = X.shape[0]
-        y_pred = np.zeros(sampleSize)
+        y_pred = [0] * sampleSize
 
         for i in range(sampleSize):
-            layersOutputs = self.forward_propagation(X[i])
+            layersOutputs = self._forward(X[i])
             last_layer_pred = layersOutputs[-1]
-            # print('last_layer_pred', last_layer_pred)
-            final_class = np.argmax(last_layer_pred)
-            # print('pred', final_class)
+            final_class = self._classifyOutput(last_layer_pred)
             y_pred[i] = final_class
         return y_pred
+
+    def _isCorrectInputLayer(self, X):
+        firstLayerWeightsExample = self.neurons[0][0].weights
+        x_columns_num = X.shape[1]
+        if self.hasBias:
+            x_columns_num += 1
+        return len(firstLayerWeightsExample) == x_columns_num
+    
+    def _isCorrectOutputLayer(self, classes_num):
+        lastLayerNeurons = self.neurons[-1]
+        numOfOutputNeurons = len(lastLayerNeurons)
+        if classes_num == 2 and numOfOutputNeurons == 1:
+            return True
+        return len(lastLayerNeurons) == classes_num
+
+
+    class _Neuron():
+        def __init__( self, network_instance, weightsNum, activation) :
+            if(activation == 'sigmoid'):
+                self.activationFun = self._sigmoid
+            elif(activation == 'tanh'):
+                self.activationFun = self._tanh
+            else:
+                raise('please enter a valid activation: [sigmoid, tanh]')
+            
+            r = np.random.RandomState()
+            self.weights = r.random(weightsNum + int(network_instance.hasBias))
+            self.network_instance = network_instance
+    
+    
+        def forward(self, x):
+            if self.network_instance.hasBias:
+                x = self._addBiasToX(x)
+                
+            ypred = np.dot(x, self.weights)
+            activation = self.activationFun(ypred)
+            return activation
+        
+        def backward(self, grdient, x):
+            if self.network_instance.hasBias:
+                x = self._addBiasToX(x)
+    
+            self.weights += grdient * self.network_instance.learning_rate * x
+    
+    
+        def _sigmoid(self, z):
+            return 1 / (1 + math.exp(-z))
+        
+        def _tanh(self, z):
+            expZ = math.exp(z)
+            _expZ = math.exp(-z)
+            return (expZ - _expZ) / (expZ + _expZ)
+        
+        def _addBiasToX(self, x):
+            # add a 1 at the begining
+            return np.insert(x, 0, 1)
+
+    
+    
+
+
+
+

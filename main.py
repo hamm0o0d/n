@@ -1,49 +1,64 @@
+from tkinter import *
 
-from HelperFunctions.load_dataset import load_dataset
-from HelperFunctions.label_encoder import LabelEncoder
-from HelperFunctions.on_hot_encoder import one_hot_encode
-from HelperFunctions.train_test_split import train_test_split
-from Models.multilayer_perceptron import MultiLayerPerceptron
-import ui_screen
+from run_test import runTest
 
+def test_function():
+    addBias = bias_var.get()
+    learningRate = float(Lrate_e.get())
+    epochs = int(epochs_e.get())
+    layers = eval(hidden_layer_e.get())
 
-# ui_screen.openGUIScreen()
+    runTest(layers, activation.get().lower(), learningRate, epochs, addBias)
 
-model = MultiLayerPerceptron(
-            num_features=5,
-            num_layers=2,
-            num_neurons=3,
-            num_classes=3,
-            learn_rate=0.01,
-            num_epochs=1,
-            has_bias=False,
-            activation='sigmoid'
-        )
+# Creating main form and sizing it
+master = Tk()
+master.geometry('750x500')
+master.title('Multilayer Perceptron Task 2')
 
+# Selecting hidden layers GUI
+hidden_layer_l = Label(master, text="Enter the layers using the format: [5, 2, 4, 3]")
+hidden_layer_l.place(x=10, y=10)
 
-df = load_dataset()
+hidden_layer_2 = Label(master, text="Where 5 is the input layer, 2 and 4 are neurons of two hidden layers, 3 is the output neurons of the output layer")
+hidden_layer_2.place(x=10, y=40)
 
-encoder = LabelEncoder(df['Class'])
-df['Class'] = df['Class'].apply(lambda x: encoder.encode(x))
+hidden_layer_e = Entry(master)
+hidden_layer_e.place(x=150, y=75)
+hidden_layer_e.insert(0, '[5, 3, 4, 3]')
 
-y = df['Class']
-x = df.drop(columns=['Class'])
+# Selecting activation function GUI
+classes_l = Label(master, text="Select activation function: ")
+classes_l.place(x=10, y=110)
 
+activation = StringVar()
+activation.set("Sigmoid")
+feature1_menu = OptionMenu(master, activation, "Sigmoid", "Tanh")
+feature1_menu.place(x=170, y=100)
 
+# Learning rate & number of epochs GUI
+Lrate_l = Label(master, text="Learning rate: ")
+Lrate_l.place(x=10, y=150)
 
-xtrain,ytrain,xtest,ytest=train_test_split(x, y, 0.4, 3)
+Lrate_e = Entry(master)
+Lrate_e.place(x=110, y=150)
+Lrate_e.insert(0, '0.1')
 
-target_data_encoded = one_hot_encode(ytrain, 3)
-print(target_data_encoded.shape)
-model.train(xtrain, target_data_encoded)
+epochs_l = Label(master, text="Number of epochs: ")
+epochs_l.place(x=240, y=150)
 
-y_pred = model.predict(xtest)
-correct = 0
-import numpy as np
-y_test = np.array(ytest)
+epochs_e = Entry(master)
+epochs_e.place(x=350, y=150)
+epochs_e.insert(0, '1000')
 
-for i in range(len(y_test)):
-    # print('y_test', y_test[i], 'pred', y_pred[i])
-    if(y_test[i] == y_pred[i]):
-        correct += 1
-print('accur', correct/len(y_test))
+# Create a variable to hold the bias checkbox state
+bias_var = IntVar(value=1)
+
+# Create a checkbox
+checkbox = Checkbutton(master, text="Bias", variable=bias_var)
+checkbox.place(x=500, y=150)
+
+# Test button
+button = Button(master, text="Train-Test", width=10, height=3, command=test_function)
+button.place(x=250, y=200)
+
+mainloop()

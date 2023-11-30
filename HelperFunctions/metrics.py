@@ -45,3 +45,30 @@ def confusion_matrix(allActual, allPredicted, unique ):
 
 
 
+def confusion_matrix_multiclass(y_pred, y_actual, labels):
+    assert len(y_actual) == len(y_pred)
+
+
+    def adjust_length(input_string, L = 10):
+        if len(input_string) >= L:
+            return input_string[:L]  # Truncate if the input string is longer than the final length
+        else:
+            return input_string + (' ' * (L - len(input_string)))
+        
+
+    classes_num = len(labels)
+
+    conf_matrix = [[0] * classes_num for _ in range(classes_num)]
+
+    correct = 0
+    for pred, act in zip(y_pred, y_actual):
+        conf_matrix[pred][act] += 1
+        if pred == act:
+            correct += 1
+
+    print("Confusion Matrix:")
+    print("\tPredicted:", "\t".join([f"{adjust_length(labels[i])}" for i in range(classes_num)]))
+    for i, row in enumerate(conf_matrix):
+        print(adjust_length(f"Actual {labels[i]}:", 20), "\t".join([adjust_length(str(val)) for val in row]))
+    print("\nAccuracy Score:", correct / len(y_actual))
+

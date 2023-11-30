@@ -10,5 +10,5 @@ class LabelEncoder() :
     def encode(self, label):
         return self.__labelToEncode.get(label)
     
-    # def getLabel(self, encodedVal):
-    #     return self.classLabels.get(encodedVal)
+    def getLabels(self):
+        return self.__encodedToLabels
